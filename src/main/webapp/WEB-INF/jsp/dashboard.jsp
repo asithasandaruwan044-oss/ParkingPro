@@ -7,7 +7,6 @@
 <head>
     <title>Dashboard - Vehicle Parking System</title>
     <style>
-        /* ඔයාගේ පරණ CSS ඔක්කොම මෙතන තියෙනවා කියලා හිතන්න */
         select {
             width: 100%; padding: 12px; margin-bottom: 18px; border-radius: 8px; border: none;
             background: rgba(255, 255, 255, 0.9); font-size: 14px; color: black;
@@ -34,6 +33,8 @@
             padding: 10px 18px; border-radius: 8px; transition: 0.3s; display: flex; align-items: center; gap: 8px;
         }
         .nav-links a:hover { background: rgba(255, 255, 255, 0.15); }
+
+        /* Dashboard එකේ ඉන්න නිසා ඒක විතරක් කහ පාට වෙන්න */
         .nav-links a.active { background: #ff9f43; color: black; font-weight: bold; }
 
         .logout-btn { background: #ff4757; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; transition: 0.3s; }
@@ -42,7 +43,7 @@
         .container { width: 95%; max-width: 1200px; margin-top: 30px; padding: 20px; }
         .status-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
 
-        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center; transition: 0.3s; }
+        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center; transition: 0.3s; cursor: pointer; }
         .card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.2); border-color: #ff9f43; }
         .card h3 { margin: 0; font-size: 13px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
         .card p { margin: 10px 0 0; font-size: 32px; font-weight: bold; }
@@ -95,7 +96,8 @@
     <div class="nav-links">
         <a href="/dashboard" class="active">🏠 Dashboard</a>
         <% if ("ADMIN".equals(role)) { %>
-        <a href="/userManagement" class="active">👥 User Management</a>
+        <%-- මෙතන තිබුණ active class එක අයින් කළා --%>
+        <a href="/userManagement">👥 User Management</a>
         <a href="/history">📜 History</a>
         <a href="/adminSettings">⚙️ Settings</a>
         <% } %>
@@ -146,7 +148,7 @@
         <div class="glass-box table-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="color: #ff9f43;">📊 Real-time Status</h3>
-                <input type="text" id="searchInput" onkeyup="searchVehicle()" placeholder="🔎 Search..." style="width: 150px; padding: 8px; border-radius: 15px;">
+                <input type="text" id="searchInput" onkeyup="searchVehicle()" placeholder="🔎 Search..." style="width: 150px; padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white;">
             </div>
 
             <table>
@@ -172,7 +174,6 @@
                 %>
                 <tr class="slot-row occupied-row">
                     <td>
-                        <%-- Cloudinary පින්තූරය මෙතනින් නිවැරදිව පෙන්වනවා --%>
                         <img src="<%= found.getImageName() %>"
                              style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);"
                              onclick="window.open(this.src)">
@@ -180,7 +181,7 @@
                     <td><b style="color: #ff9f43;"><%= found.getSlot() %></b><br><%= found.getVehicleNumber() %></td>
                     <td>
                         <%= found.getOwnerName() %><br>
-                        <span style="font-size: 10px; padding: 2px 5px; border-radius: 4px; background: <%= "MEMBER".equals(found.getCustomerType()) ? "#2ecc71" : "#95a5a6" %>;">
+                        <span style="font-size: 10px; padding: 2px 5px; border-radius: 4px; background: <%= "MEMBER".equals(found.getCustomerType()) ? "#2ecc71" : "#95a5a6" %>; color: white;">
                             <%= found.getCustomerType() %>
                         </span>
                     </td>
