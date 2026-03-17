@@ -92,16 +92,14 @@
 
 <div class="navbar">
     <h2 style="margin:0; font-size: 22px;">🅿️ ParkingPro</h2>
-
     <div class="nav-links">
-        <a href="/dashboard">🏠 Dashboard</a>
-        <% if (role != null && role.equals("ADMIN")) { %>
+        <a href="/dashboard" class="active">🏠 Dashboard</a>
+        <% if ("ADMIN".equals(role)) { %>
         <a href="/userManagement" class="active">👥 User Management</a>
-        <a href="/history">📜 History Logs</a>
-        <a href="/adminSettings">⚙️ Admin Settings</a>
+        <a href="/history">📜 History</a>
+        <a href="/adminSettings">⚙️ Settings</a>
         <% } %>
     </div>
-
     <div style="display: flex; align-items: center; gap: 20px;">
         <span style="font-size: 13px; opacity: 0.8;">Welcome, <b><%= userName %></b></span>
         <a href="/logout" class="logout-btn">Logout</a>
