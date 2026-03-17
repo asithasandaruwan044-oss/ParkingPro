@@ -129,9 +129,9 @@
                 <label>Vehicle Number</label>
                 <input type="text" name="vNumber" placeholder="Ex: CAS-1234" required>
                 <label>Owner Name</label>
-                <input type="text" name="owner" required>
+                <input type="text" name="owner" placeholder="Ex: Nadun Senanayake" required>
                 <label>Vehicle Model</label>
-                <input type="text" name="model" required>
+                <input type="text" name="model" placeholder="Ex: Benz" required>
                 <label>Customer Type</label>
                 <select name="customerType">
                     <option value="GUEST">Guest</option>
