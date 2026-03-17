@@ -1,0 +1,5 @@
+[variables]
+NIXPACKS_JDK_VERSION = '17'
+
+[start]
+cmd = 'java -jar target/System-0.0.1-SNAPSHOT.war'
