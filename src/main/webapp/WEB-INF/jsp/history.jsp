@@ -30,25 +30,17 @@
         .more-btn { background: #ff9f43; color: black; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .more-btn:hover { background: #e68a00; transform: scale(1.05); }
 
-        /* Delete Link Style */
-        .delete-btn {
-            background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 13px; transition: 0.3s;
-        }
-        .delete-btn:hover {
-            background: #ff4757; color: white;
-        }
+        .delete-btn { background: rgba(255, 71, 87, 0.2); color: #ff4757; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 13px; transition: 0.3s; }
+        .delete-btn:hover { background: #ff4757; color: white; }
 
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); }
-        .modal-content { background: #1e1e1e; margin: 5% auto; padding: 20px; border-radius: 15px; width: 400px; text-align: center; border: 1px solid #ff9f43; }
-        .modal-content img { width: 100%; border-radius: 10px; border: 2px solid #ff9f43; margin-bottom: 15px; }
+        .modal-content { background: #1e1e1e; margin: 5% auto; padding: 20px; border-radius: 15px; width: 400px; text-align: center; border: 1px solid #ff9f43; box-shadow: 0 0 20px rgba(255, 159, 67, 0.4); }
+        .modal-content img { width: 100%; height: 250px; border-radius: 10px; border: 2px solid #ff9f43; margin-bottom: 15px; object-fit: cover; }
         .close-btn { float: right; font-size: 28px; cursor: pointer; color: white; }
 
         .back-btn { display: inline-block; margin-top: 30px; text-decoration: none; color: #2ecc71; font-weight: bold; }
-
         #historySearch { padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; width: 250px; outline: none; }
         .page-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
-        .page-btn:hover:not(:disabled) { background: #ff9f43; color: black; }
-        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -56,15 +48,16 @@
 <div id="detailsModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal()">&times;</span>
-        <h3 style="color: #ff9f43; margin-bottom: 20px;">Vehicle Entry Evidence</h3>
-        <img id="modalImg" src="" alt="Vehicle Image">
+        <h3 style="color: #ff9f43; margin-bottom: 20px;">📜 Entry Evidence</h3>
+        <%-- Modal එකේ පින්තූරය පෙන්වන තැන --%>
+        <img id="modalImg" src="" alt="Vehicle Image" onclick="window.open(this.src)">
         <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
             <p>🚗 <b>Plate:</b> <span id="mPlate"></span></p>
             <p>👤 <b>Owner:</b> <span id="mOwner"></span></p>
             <p>💰 <b>Paid:</b> Rs. <span id="mFee"></span>.00</p>
             <p>🕒 <b>Entry Time:</b> <span id="mEntry"></span></p>
             <p>🕒 <b>Exit Time:</b> <span id="mExit"></span></p>
-            <p>👮 <b>Staff / Handled By:</b> <span id="mStaff"></span></p>
+            <p>👮 <b>Staff:</b> <span id="mStaff"></span></p>
         </div>
     </div>
 </div>
@@ -87,9 +80,7 @@
                     for(String date : daily.keySet()) {
             %>
             <div class="stat-row"><span><%= date %></span><span style="color: #2ecc71;">Rs. <%= daily.get(date) %>.00</span></div>
-            <% } } else { %>
-            <div class="stat-row">No data</div>
-            <% } %>
+            <% } } %>
         </div>
         <div class="summary-box">
             <h4>📊 Monthly Revenue</h4>
@@ -99,9 +90,7 @@
                     for(String month : monthly.keySet()) {
             %>
             <div class="stat-row"><span><%= month %></span><span style="color: #ff9f43;">Rs. <%= monthly.get(month) %>.00</span></div>
-            <% } } else { %>
-            <div class="stat-row">No data</div>
-            <% } %>
+            <% } } %>
         </div>
     </div>
 
@@ -114,7 +103,7 @@
         <table>
             <thead>
             <tr>
-                <th>Slot</th><th>Vehicle No</th><th>Owner</th><th>Fee Paid</th><th>Exit Time</th><th>Action</th>
+                <th>Photo</th><th>Vehicle No</th><th>Owner</th><th>Fee Paid</th><th>Exit Time</th><th>Action</th>
             </tr>
             </thead>
             <tbody id="historyTableBody">
@@ -124,8 +113,11 @@
                     for (HistoryEntity h : historyList) {
             %>
             <tr class="history-row">
-                <td><b><%= h.getSlot() %></b></td>
-                <td><%= h.getVehicleNumber() %></td>
+                <td>
+                    <img src="<%= h.getImageName() %>"
+                         style="width: 45px; height: 45px; border-radius: 5px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+                </td>
+                <td><b><%= h.getVehicleNumber() %></b></td>
                 <td><%= h.getOwnerName() %></td>
                 <td style="color:#2ecc71; font-weight:bold;">Rs. <%= h.getFee().intValue() %>.00</td>
                 <td style="font-size: 12px; opacity: 0.8;"><%= h.getExitTime() %></td>
@@ -134,16 +126,11 @@
                             onclick="showDetails('<%= h.getVehicleNumber() %>', '<%= h.getOwnerName() %>', '<%= h.getFee().intValue() %>', '<%= h.getExitTime() %>', '<%= h.getImageName() %>', '<%= h.getEntryTime() %>', '<%= h.getHandledBy() %>')">
                         More
                     </button>
-                    <%-- Delete පහසුකම --%>
                     <a href="/deleteLog?id=<%= h.getId() %>" class="delete-btn"
-                       onclick="return confirm('Do you want to delete this?')">
-                        🗑️ Delete
-                    </a>
+                       onclick="return confirm('Do you want to delete this?')">🗑️</a>
                 </td>
             </tr>
-            <% } } else { %>
-            <tr><td colspan="6" style="text-align:center; opacity:0.5;">No history records found in Database.</td></tr>
-            <% } %>
+            <% } } %>
             </tbody>
         </table>
 
@@ -158,14 +145,17 @@
 </div>
 
 <script>
-    function showDetails(vNo, owner, fee, exit, img, entry, staff) {
+    function showDetails(vNo, owner, fee, exit, imgUrl, entry, staff) {
         document.getElementById("mPlate").innerText = vNo;
         document.getElementById("mOwner").innerText = owner;
         document.getElementById("mFee").innerText = fee;
         document.getElementById("mExit").innerText = exit;
         document.getElementById("mEntry").innerText = entry;
         document.getElementById("mStaff").innerText = staff;
-        document.getElementById("modalImg").src = "${pageContext.request.contextPath}/images/uploaded_images/" + img;
+
+        // --- මෙන්න මෙතනයි වෙනස් කළේ ---
+        // දැන්imgUrl එකේ කෙලින්ම Cloudinary URL එක තියෙන නිසා path එක ඕන වෙන්නේ නැහැ
+        document.getElementById("modalImg").src = imgUrl;
         document.getElementById("detailsModal").style.display = "block";
     }
 
@@ -187,16 +177,14 @@
 
     function changePage(page) {
         let tableRows = Array.from(document.querySelectorAll(".history-row"));
-        if (page < 1) page = 1;
         let totalP = Math.ceil(tableRows.length / recordsPerPage) || 1;
+        if (page < 1) page = 1;
         if (page > totalP) page = totalP;
 
         tableRows.forEach(row => row.style.display = "none");
-
         for (let i = (page - 1) * recordsPerPage; i < (page * recordsPerPage) && i < tableRows.length; i++) {
             tableRows[i].style.display = "";
         }
-
         document.getElementById("page_num").innerHTML = "Page: " + page + " of " + totalP;
         document.getElementById("btn_prev").disabled = (page === 1);
         document.getElementById("btn_next").disabled = (page === totalP || tableRows.length === 0);
