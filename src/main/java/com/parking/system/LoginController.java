@@ -36,7 +36,10 @@ public class LoginController {
     public String showLoginPage() {
         return "login";
     }
-
+    @GetMapping("/")
+    public String index() {
+        return "redirect:/login";
+    }
     @PostMapping("/login")
     public String login(@RequestParam String username, @RequestParam String password, HttpSession session, Model model) {
         Optional<UserEntity> user = userRepository.findByUsername(username);
