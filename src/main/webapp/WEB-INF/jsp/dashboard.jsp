@@ -7,6 +7,7 @@
 <head>
     <title>Dashboard - Vehicle Parking System</title>
     <style>
+        /* ඔයාගේ පරණ CSS ඔක්කොම මෙතන තියෙනවා කියලා හිතන්න */
         select {
             width: 100%; padding: 12px; margin-bottom: 18px; border-radius: 8px; border: none;
             background: rgba(255, 255, 255, 0.9); font-size: 14px; color: black;
@@ -68,26 +69,18 @@
         #paginationControls button { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); color: white; border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.3s; font-size: 14px; }
         #paginationControls button:hover:not(:disabled) { background: rgba(255, 159, 67, 0.3); border-color: #ff9f43; }
         #paginationControls button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
     </style>
 </head>
 <body>
 
-<%-- Error Message එක Navbar එකට උඩින් පෙන්වන්න --%>
+<%-- Messages Section --%>
 <% if (request.getAttribute("error") != null || session.getAttribute("error") != null) {
     String msg = (request.getAttribute("error") != null) ? (String)request.getAttribute("error") : (String)session.getAttribute("error");
 %>
-<div id="errorAlert" style="width: 100%; background: #ff4757; color: white; padding: 10px; text-align: center; font-weight: bold; animation: slideDown 0.5s ease; position: fixed; top: 0; z-index: 2000;">
+<div id="errorAlert" style="width: 100%; background: #ff4757; color: white; padding: 10px; text-align: center; font-weight: bold; position: fixed; top: 0; z-index: 2000;">
     ⚠️ <%= msg %>
-    <span onclick="this.parentElement.style.display='none'" style="margin-left: 20px; cursor: pointer;">[CLOSE]</span>
 </div>
-<script>
-    setTimeout(function() { document.getElementById("errorAlert").style.display = 'none'; }, 5000);
-</script>
+<script>setTimeout(function() { document.getElementById("errorAlert").style.display = 'none'; }, 5000);</script>
 <% session.removeAttribute("error"); } %>
 
 <%
@@ -98,51 +91,51 @@
 %>
 
 <div class="navbar">
-    <h2 style="margin:0; font-size: 22px;">🅿️ ParkingPro</h2>
+    <h2 style="margin:0;">🅿️ ParkingPro</h2>
     <div class="nav-links">
         <a href="/dashboard" class="active">🏠 Dashboard</a>
         <% if ("ADMIN".equals(role)) { %>
-        <a href="/userManagement">👥 User Management</a>
-        <a href="/history">📜 History Logs</a>
-        <a href="/adminSettings">⚙️ Admin Settings</a>
+        <a href="/userManagement">👥 Users</a>
+        <a href="/history">📜 History</a>
+        <a href="/adminSettings">⚙️ Settings</a>
         <% } %>
     </div>
     <div style="display: flex; align-items: center; gap: 20px;">
-        <span style="font-size: 13px; opacity: 0.8;">Welcome, <b><%= userName %></b></span>
+        <span>Welcome, <b><%= userName %></b></span>
         <a href="/logout" class="logout-btn">Logout</a>
     </div>
 </div>
 
 <div class="container">
     <div class="status-container">
-        <div class="card" onclick="filterSlots('all')" style="cursor:pointer; border-bottom: 4px solid white;">
+        <div class="card" onclick="filterSlots('all')">
             <h3>Total Slots</h3>
             <p><%= totalSlots %></p>
         </div>
-        <div class="card" onclick="filterSlots('occupied')" style="cursor:pointer; border-bottom: 4px solid #ff9f43;">
+        <div class="card" onclick="filterSlots('occupied')" style="border-bottom: 4px solid #ff9f43;">
             <h3>Occupied</h3>
             <p><%= (vList != null) ? vList.size() : 0 %></p>
         </div>
-        <div class="card" onclick="filterSlots('free')" style="cursor:pointer; border-bottom: 4px solid #2ecc71;">
+        <div class="card" onclick="filterSlots('free')" style="border-bottom: 4px solid #2ecc71;">
             <h3>Free Slots</h3>
-            <p><%= (request.getAttribute("availableSlots") != null) ? (Integer)request.getAttribute("availableSlots") : (totalSlots - ((vList != null) ? vList.size() : 0)) %></p>
+            <p><%= totalSlots - ((vList != null) ? vList.size() : 0) %></p>
         </div>
     </div>
 
     <div class="main-content">
         <div class="glass-box form-section">
-            <h3 style="margin-top:0; color: #ff9f43;">🚗 Register Vehicle</h3>
+            <h3 style="color: #ff9f43;">🚗 Register Vehicle</h3>
             <form action="/addVehicle" method="post" enctype="multipart/form-data">
                 <label>Vehicle Number</label>
-                <input type="text" name="vNumber" placeholder="Ex: WP CAS-1234" required>
+                <input type="text" name="vNumber" placeholder="Ex: CAS-1234" required>
                 <label>Owner Name</label>
-                <input type="text" name="owner" placeholder="Owner Name" required>
+                <input type="text" name="owner" required>
                 <label>Vehicle Model</label>
-                <input type="text" name="model" placeholder="Vehicle Model" required>
+                <input type="text" name="model" required>
                 <label>Customer Type</label>
                 <select name="customerType">
-                    <option value="GUEST">Guest (Casual)</option>
-                    <option value="MEMBER">Registered Member</option>
+                    <option value="GUEST">Guest</option>
+                    <option value="MEMBER">Member</option>
                 </select>
                 <label>Vehicle Photo</label>
                 <input type="file" name="vehicleImage" accept="image/*" required>
@@ -151,9 +144,9 @@
         </div>
 
         <div class="glass-box table-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: #ff9f43;">📊 Real-time Parking Status</h3>
-                <input type="text" id="searchInput" onkeyup="searchVehicle()" placeholder="🔎 Search Vehicle..." style="width: 200px; padding: 10px 15px; border-radius: 20px; border: none; color: black; font-size: 13px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #ff9f43;">📊 Real-time Status</h3>
+                <input type="text" id="searchInput" onkeyup="searchVehicle()" placeholder="🔎 Search..." style="width: 150px; padding: 8px; border-radius: 15px;">
             </div>
 
             <table>
@@ -179,14 +172,15 @@
                 %>
                 <tr class="slot-row occupied-row">
                     <td>
-                        <img src="${pageContext.request.contextPath}/images/uploaded_images/<%= found.getImageName() %>"
-                             style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover; cursor: pointer;"
+                        <%-- Cloudinary පින්තූරය මෙතනින් නිවැරදිව පෙන්වනවා --%>
+                        <img src="<%= found.getImageName() %>"
+                             style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);"
                              onclick="window.open(this.src)">
                     </td>
                     <td><b style="color: #ff9f43;"><%= found.getSlot() %></b><br><%= found.getVehicleNumber() %></td>
                     <td>
                         <%= found.getOwnerName() %><br>
-                        <span style="font-size: 10px; padding: 2px 5px; border-radius: 4px; background: <%= "MEMBER".equals(found.getCustomerType()) ? "#2ecc71" : "#95a5a6" %>; color: white;">
+                        <span style="font-size: 10px; padding: 2px 5px; border-radius: 4px; background: <%= "MEMBER".equals(found.getCustomerType()) ? "#2ecc71" : "#95a5a6" %>;">
                             <%= found.getCustomerType() %>
                         </span>
                     </td>
@@ -194,24 +188,24 @@
                     <td style="font-size: 11px; opacity: 0.8;"><%= found.getEntryTime() %></td>
                     <td>
                         <a href="/deleteVehicle?vNumber=<%= found.getVehicleNumber() %>" class="delete-link"
-                           onclick="return confirm('Release this vehicle?')">Exit</a>
+                           onclick="return confirm('Release vehicle?')">Exit</a>
                     </td>
                 </tr>
                 <% } else { %>
                 <tr class="slot-row free-row">
-                    <td><div style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 5px;"></div></td>
+                    <td><div style="width: 50px; height: 50px; background: rgba(255,255,255,0.05); border-radius: 5px; border: 1px dashed rgba(255,255,255,0.2);"></div></td>
                     <td><b><%= slotLabel %></b></td>
-                    <td colspan="3" style="text-align:center; color: #2ecc71; opacity: 0.5; font-style: italic;">Available</td>
-                    <td><span style="color:#2ecc71; font-weight: bold; font-size: 12px;">Empty</span></td>
+                    <td colspan="3" style="text-align:center; color: #2ecc71; opacity: 0.5;">Available</td>
+                    <td><span style="color:#2ecc71; font-weight: bold;">Empty</span></td>
                 </tr>
                 <% } } %>
                 </tbody>
             </table>
 
             <div id="paginationControls">
-                <button onclick="prevPage()" id="btnPrev">← Previous</button>
+                <button onclick="prevPage()" id="btnPrev">←</button>
                 <span id="pageInfo"></span>
-                <button onclick="nextPage()" id="btnNext">Next →</button>
+                <button onclick="nextPage()" id="btnNext">→</button>
             </div>
         </div>
     </div>
@@ -238,7 +232,6 @@
         let input = document.getElementById("searchInput").value.toUpperCase();
         let rows = document.querySelectorAll(".slot-row");
         let pagination = document.getElementById("paginationControls");
-
         if (input === "") {
             pagination.style.display = "flex";
             displayTable();
@@ -255,28 +248,23 @@
         let allRows = Array.from(document.querySelectorAll(".slot-row"));
         let visibleRows = allRows.filter(row => !row.classList.contains('filtered-out'));
         let totalPages = Math.ceil(visibleRows.length / recordsPerPage) || 1;
-
         if (currentPage > totalPages) currentPage = totalPages;
-
         allRows.forEach(row => row.style.display = "none");
         visibleRows.forEach((row, index) => {
             if (index >= (currentPage - 1) * recordsPerPage && index < currentPage * recordsPerPage) {
                 row.style.display = "";
             }
         });
-
         document.getElementById("pageInfo").innerText = "Page " + currentPage + " of " + totalPages;
         document.getElementById("btnPrev").disabled = (currentPage === 1);
         document.getElementById("btnNext").disabled = (currentPage === totalPages || visibleRows.length === 0);
     }
-
     function prevPage() { if (currentPage > 1) { currentPage--; displayTable(); } }
     function nextPage() {
         let visibleRows = Array.from(document.querySelectorAll(".slot-row")).filter(row => !row.classList.contains('filtered-out'));
         if (currentPage < Math.ceil(visibleRows.length / recordsPerPage)) { currentPage++; displayTable(); }
     }
-
-    window.onload = function() { displayTable(); };
+    window.onload = displayTable;
 </script>
 </body>
 </html>

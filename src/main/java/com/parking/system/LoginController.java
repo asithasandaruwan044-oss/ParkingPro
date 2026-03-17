@@ -1,22 +1,31 @@
 package com.parking.system;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import jakarta.servlet.http.HttpSession;
-import java.util.*;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.ui.Model;
-import java.io.*;
+import java.util.*;
 
 @Controller
 public class LoginController {
+
+    // Cloudinary Configuration
+    private final Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
+            "cloud_name", "dzdt83ztu",
+            "api_key", "314498547929599",
+            "api_secret", "rqHZwHq8wAdmRsV0jgUa2y2Tosw",
+            "secure", true
+    ));
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -36,10 +45,12 @@ public class LoginController {
     public String showLoginPage() {
         return "login";
     }
+
     @GetMapping("/")
     public String index() {
         return "redirect:/login";
     }
+
     @PostMapping("/login")
     public String login(@RequestParam String username, @RequestParam String password, HttpSession session, Model model) {
         Optional<UserEntity> user = userRepository.findByUsername(username);
@@ -53,7 +64,9 @@ public class LoginController {
     }
 
     @GetMapping("/dashboard")
-    public String showDashboard(Model model) {
+    public String showDashboard(Model model, HttpSession session) {
+        if (session.getAttribute("userName") == null) return "redirect:/login";
+
         List<VehicleEntity> vehicleList = vehicleRepository.findAll();
         int totalSlots = getTotalSlots();
 
@@ -66,82 +79,81 @@ public class LoginController {
     @PostMapping("/addVehicle")
     public String addVehicle(@RequestParam String vNumber, @RequestParam String owner,
                              @RequestParam String model, @RequestParam String customerType,
-                             @RequestParam("vehicleImage") MultipartFile file, HttpSession session) {
+                             @RequestParam("vehicleImage") MultipartFile file,
+                             HttpSession session, RedirectAttributes ra) {
         try {
             String entryUser = (String) session.getAttribute("userName");
             if (entryUser == null) entryUser = "System";
 
-            // 1. Duplicate Check
-            List<VehicleEntity> currentVehicles = vehicleRepository.findAll();
-            Optional<VehicleEntity> duplicate = currentVehicles.stream()
-                    .filter(v -> v.getVehicleNumber().equalsIgnoreCase(vNumber.trim()))
-                    .findFirst();
+            // 1. Duplicate Check - Database එකෙන්ම කෙලින්ම check කරනවා
+            List<VehicleEntity> allActive = vehicleRepository.findAll();
+            boolean isAlreadyParked = allActive.stream()
+                    .anyMatch(v -> v.getVehicleNumber().equalsIgnoreCase(vNumber.trim()));
 
-            if (duplicate.isPresent()) {
-                session.setAttribute("error", "Vehicle " + vNumber + " is already parked in " + duplicate.get().getSlot() + "!");
+            if (isAlreadyParked) {
+                ra.addFlashAttribute("error", "Vehicle " + vNumber + " is already parked!");
                 return "redirect:/dashboard";
             }
 
             int totalSlots = getTotalSlots();
-            if (currentVehicles.size() < totalSlots) {
-                String assignedSlot = "";
+            if (allActive.size() < totalSlots) {
+                // Slot Assignment Logic
+                String assignedSlot = "Slot-00";
                 for (int i = 1; i <= totalSlots; i++) {
                     String slotName = "Slot-" + String.format("%02d", i);
-                    boolean isOccupied = false;
-                    for (VehicleEntity v : currentVehicles) {
-                        if (v.getSlot().equals(slotName)) { isOccupied = true; break; }
+                    boolean isOccupied = allActive.stream().anyMatch(v -> v.getSlot().equals(slotName));
+                    if (!isOccupied) {
+                        assignedSlot = slotName;
+                        break;
                     }
-                    if (!isOccupied) { assignedSlot = slotName; break; }
                 }
 
-                String fileName = "default.jpg";
-                if (!file.isEmpty()) {
-                    String uploadDir = new File("src/main/resources/static/images/uploaded_images/").getAbsolutePath();
-                    File dir = new File(uploadDir);
-                    if (!dir.exists()) dir.mkdirs();
-                    fileName = vNumber.trim().replaceAll("\\s+", "_") + "_" + System.currentTimeMillis() + ".jpg";
-                    file.transferTo(new File(dir + File.separator + fileName));
+                // Cloudinary Upload
+                String finalImageUrl = "https://res.cloudinary.com/dzdt83ztu/image/upload/v12345678/default-car.png";
+                if (file != null && !file.isEmpty()) {
+                    Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                    finalImageUrl = (String) uploadResult.get("secure_url");
                 }
 
                 VehicleEntity newVehicle = new VehicleEntity();
                 newVehicle.setSlot(assignedSlot);
-                newVehicle.setVehicleNumber(vNumber.trim());
+                newVehicle.setVehicleNumber(vNumber.trim().toUpperCase());
                 newVehicle.setOwnerName(owner.trim());
                 newVehicle.setModel(model.trim());
                 newVehicle.setEntryTime(LocalDateTime.now().format(formatter));
                 newVehicle.setCustomerType(customerType);
-                newVehicle.setImageName(fileName);
+                newVehicle.setImageName(finalImageUrl);
                 newVehicle.setEntryUser(entryUser);
 
                 vehicleRepository.save(newVehicle);
+                ra.addFlashAttribute("success", "Vehicle Added Successfully!");
             } else {
-                session.setAttribute("error", "Parking is Full!");
+                ra.addFlashAttribute("error", "Parking is Full!");
             }
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            ra.addFlashAttribute("error", "Image Upload Failed!");
+            e.printStackTrace();
+        }
         return "redirect:/dashboard";
     }
 
     @GetMapping("/deleteVehicle")
     public String deleteVehicle(@RequestParam String vNumber, HttpSession session, Model model) {
+        if (session.getAttribute("userName") == null) return "redirect:/login";
+
         String exitUser = (String) session.getAttribute("userName");
-        if (exitUser == null) exitUser = "System";
 
-        List<VehicleEntity> vehiclesFound = vehicleRepository.findAll();
-        VehicleEntity v = null;
-        for (VehicleEntity currentV : vehiclesFound) {
-            if (currentV.getVehicleNumber().trim().equalsIgnoreCase(vNumber.trim())) {
-                v = currentV;
-                break;
-            }
-        }
+        Optional<VehicleEntity> vehicleOpt = vehicleRepository.findAll().stream()
+                .filter(v -> v.getVehicleNumber().equalsIgnoreCase(vNumber.trim()))
+                .findFirst();
 
-        if (v != null) {
+        if (vehicleOpt.isPresent()) {
+            VehicleEntity v = vehicleOpt.get();
             LocalDateTime entryTime = LocalDateTime.parse(v.getEntryTime(), formatter);
             LocalDateTime exitTime = LocalDateTime.now();
             Duration duration = Duration.between(entryTime, exitTime);
 
-            long totalSeconds = duration.getSeconds();
-            long minutes = (long) Math.ceil(totalSeconds / 60.0);
+            long minutes = (long) Math.ceil(duration.getSeconds() / 60.0);
             if (minutes < 1) minutes = 1;
 
             int rate = getRatePerMinute();
@@ -187,16 +199,13 @@ public class LoginController {
             long fee = h.getFee().longValue();
             totalEarnings += fee;
 
-            String exitDateTime = h.getExitTime();
-            String dateOnly = exitDateTime.split(" ")[0];
+            String dateOnly = h.getExitTime().split(" ")[0];
             String monthOnly = dateOnly.substring(0, 7);
 
             dailyEarnings.put(dateOnly, dailyEarnings.getOrDefault(dateOnly, 0L) + fee);
             monthlyEarnings.put(monthOnly, monthlyEarnings.getOrDefault(monthOnly, 0L) + fee);
 
-            if (dateOnly.equals(todayDate)) {
-                todayEarnings += fee;
-            }
+            if (dateOnly.equals(todayDate)) todayEarnings += fee;
         }
 
         model.addAttribute("historyLogs", historyList);
@@ -255,6 +264,18 @@ public class LoginController {
         return "redirect:/adminSettings";
     }
 
+    @GetMapping("/deleteLog")
+    public String deleteLog(@RequestParam("id") Long id, HttpSession session, RedirectAttributes ra) {
+        if (!"ADMIN".equals(session.getAttribute("userRole"))) return "redirect:/login";
+        try {
+            historyRepository.deleteById(id);
+            ra.addFlashAttribute("success", "Log record deleted successfully!");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error deleting record!");
+        }
+        return "redirect:/history";
+    }
+
     private int getRatePerMinute() {
         return settingsRepository.findById(1).map(SettingsEntity::getRatePerMinute).orElse(2);
     }
@@ -267,23 +288,5 @@ public class LoginController {
     public String logout(HttpSession session) {
         session.invalidate();
         return "redirect:/login";
-    }
-
-    @GetMapping("/deleteLog")
-    public String deleteLog(@RequestParam("id") Long id, HttpSession session, RedirectAttributes redirectAttributes) {
-        // Admin කෙනෙක් නෙමෙයි නම් ලොග් වෙන්න කියන්න
-        if (!"ADMIN".equals(session.getAttribute("userRole"))) {
-            return "redirect:/login";
-        }
-
-        try {
-            // Database එකෙන් අදාළ Record එක මකනවා
-            historyRepository.deleteById(id);
-            redirectAttributes.addFlashAttribute("success", "Log record deleted successfully!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error deleting record: " + e.getMessage());
-        }
-
-        return "redirect:/history";
     }
 }
