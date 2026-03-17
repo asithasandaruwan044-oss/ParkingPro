@@ -13,13 +13,13 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId; // FIXED: මේක අලුතින් එක් කළා
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Controller
 public class LoginController {
 
-    // Cloudinary Configuration
     private final Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
             "cloud_name", "dzdt83ztu",
             "api_key", "314498547929599",
@@ -28,6 +28,8 @@ public class LoginController {
     ));
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    // FIXED: ලංකාවේ Zone එක වෙනම variable එකකට ගත්තා ලේසි වෙන්න
+    private final ZoneId slZone = ZoneId.of("Asia/Colombo");
 
     @Autowired
     private UserRepository userRepository;
@@ -85,7 +87,6 @@ public class LoginController {
             String entryUser = (String) session.getAttribute("userName");
             if (entryUser == null) entryUser = "System";
 
-            // 1. Duplicate Check - Database එකෙන්ම කෙලින්ම check කරනවා
             List<VehicleEntity> allActive = vehicleRepository.findAll();
             boolean isAlreadyParked = allActive.stream()
                     .anyMatch(v -> v.getVehicleNumber().equalsIgnoreCase(vNumber.trim()));
@@ -97,7 +98,6 @@ public class LoginController {
 
             int totalSlots = getTotalSlots();
             if (allActive.size() < totalSlots) {
-                // Slot Assignment Logic
                 String assignedSlot = "Slot-00";
                 for (int i = 1; i <= totalSlots; i++) {
                     String slotName = "Slot-" + String.format("%02d", i);
@@ -108,7 +108,6 @@ public class LoginController {
                     }
                 }
 
-                // Cloudinary Upload
                 String finalImageUrl = "https://res.cloudinary.com/dzdt83ztu/image/upload/v12345678/default-car.png";
                 if (file != null && !file.isEmpty()) {
                     Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
@@ -120,7 +119,10 @@ public class LoginController {
                 newVehicle.setVehicleNumber(vNumber.trim().toUpperCase());
                 newVehicle.setOwnerName(owner.trim());
                 newVehicle.setModel(model.trim());
-                newVehicle.setEntryTime(LocalDateTime.now().format(formatter));
+
+                // FIXED: Entry Time එක ලංකාවේ වෙලාවට සැකසුවා
+                newVehicle.setEntryTime(LocalDateTime.now(slZone).format(formatter));
+
                 newVehicle.setCustomerType(customerType);
                 newVehicle.setImageName(finalImageUrl);
                 newVehicle.setEntryUser(entryUser);
@@ -150,7 +152,10 @@ public class LoginController {
         if (vehicleOpt.isPresent()) {
             VehicleEntity v = vehicleOpt.get();
             LocalDateTime entryTime = LocalDateTime.parse(v.getEntryTime(), formatter);
-            LocalDateTime exitTime = LocalDateTime.now();
+
+            // FIXED: Exit Time එක ලංකාවේ වෙලාවට සැකසුවා
+            LocalDateTime exitTime = LocalDateTime.now(slZone);
+
             Duration duration = Duration.between(entryTime, exitTime);
 
             long minutes = (long) Math.ceil(duration.getSeconds() / 60.0);
@@ -193,7 +198,8 @@ public class LoginController {
         Map<String, Long> dailyEarnings = new TreeMap<>(Collections.reverseOrder());
         Map<String, Long> monthlyEarnings = new TreeMap<>(Collections.reverseOrder());
 
-        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        // FIXED: අද දවස ගණනය කරද්දීත් ලංකාවේ වෙලාව ගත්තා
+        String todayDate = LocalDateTime.now(slZone).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         for (HistoryEntity h : historyList) {
             long fee = h.getFee().longValue();
@@ -217,6 +223,7 @@ public class LoginController {
         return "history";
     }
 
+    // ඉතිරි methods වෙනස් කිරීමට අවශ්‍ය නැත...
     @GetMapping("/userManagement")
     public String userManagement(HttpSession session, Model model) {
         if (!"ADMIN".equals(session.getAttribute("userRole"))) return "redirect:/dashboard";
